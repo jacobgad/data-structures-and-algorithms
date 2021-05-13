@@ -29,12 +29,10 @@ class BST {
 
 	public:
         /* define your data structure to represent a binary search tree (bst) */
-        Node<T>* root = nullptr;
+        Node<T>* root;
         T total_weight;
         vector<Node<T>*> nodes;
         vector<pair<string, string>> edges;
-        
-        vector<string> v_postorder;
         
         /* test1 */
 		BST(); // the contructor function.
@@ -46,12 +44,11 @@ class BST {
         /* test2 */
         void add_vertex(const string&, const T&); // adds a vertex, which has a weight, to the tree -- every vertex uses a string as its unique identifier.
         bool contains(const string&); // checks if a vertex is in the bst -- returns true if the bst contains the given vertex; otherwise, returns false.
-        void recursive_add_vertex(Node<T>*, Node<T>*);
+        void recursive_add_vertex(Node<T>*, Node<T>*); // thr recursive function that adds a node to the BTS
 
         /* test3 */
         vector<string> get_vertices(); // returns a vector of all the vertices in the bst.
-        vector<string> get_leaves(); // returns a vector of all the leaves in the bst.
-                                     //     Leaves are the vertices that do not have any children in the bst.
+        vector<string> get_leaves(); // returns a vector of all the leaves in the bst. Leaves are the vertices that do not have any children in the bst.
 
         /* test4 */
         bool adjacent(const string&, const string&); // check if there is an edge between the two vertices in the bst -- returns true if the edge exists; otherwise, returns false.
@@ -71,32 +68,32 @@ class BST {
         
         /* test9 */
         vector<string> postorder_traversal(); // returns a vector of all the vertices in the visiting order of a postorder traversal over the bst.
-        void recursive_postorder_traversal(Node<T>*);
+        void recursive_postorder_traversal(Node<T>*, vector<string>&); // recursive function called by the postorder traversal
 
         /* test10 */
         vector<string> breadth_first_traversal(); // returns a vector of all the vertices in the visiting order of a breadth first traversal over the bst.
 		
         /* test11 */
-        vector<string> path(const string&, const string&); // returns a vector of all the vertices in the path from the first vertex to the second vertex.
-                                                           //     A path should include the source and destination vertices at the begining and the end, respectively.
+        vector<string> path(const string&, const string&); // returns a vector of all the vertices in the path from the first vertex to the second vertex. A path should include the source and destination vertices at the begining and the end, respectively.
 
         /* test12 */
         vector<string> path_with_largest_weight(); // returns a path that has the largest weight in the bst.
-        int path_weight(vector<Node<T>*>);         //    The weight of a path is the sum of the weights of all the vertices (including the source and destination vertices) in the path.
-        vector<Node<T>*>vector_converter(vector<string>);
+        size_t path_weight(vector<Node<T>*>); // The weight of a path is the sum of the weights of all the vertices (including the source and destination vertices) in the path.
+        vector<Node<T>*>vector_converter(vector<string>); //converts a vector of strings to a vector of nodes<T>* pointers
 
         /* test13 */
         size_t height(); // returns the height of bst. Height of a tree is the number of edges that form the longest path from root to any leaf.
 
         /* test14 */
         void remove_vertex(const string&); // delete the given vertex from bst -- note that, all incident edges of the vertex should be deleted as well.
-        void remove_edges(const string&);
+        void remove_edges(const string&); // function that removes all edges of a particular node
 };
 
 /* test1 */
 
 template <typename T>
 BST<T>::BST() {
+    root = nullptr;
     total_weight = 0;
 }
 
@@ -124,12 +121,13 @@ T BST<T>::sum_weight() {
 
 template <typename T>
 void BST<T>::add_vertex(const string& u, const T& w) {
+    //initialise new node
     Node<T>* newNode = new Node<T>();
     newNode->data = u;
     newNode->weight = w;
     newNode->left = nullptr;
     newNode->right = nullptr;
-
+    //call recursive function then add to vector
     recursive_add_vertex(newNode, root);
     nodes.push_back(newNode);  
     total_weight += w;        
@@ -137,27 +135,33 @@ void BST<T>::add_vertex(const string& u, const T& w) {
 
 template <typename T>
 void BST<T>::recursive_add_vertex(Node<T>* newNode, Node<T>* currentNode) {
+    //check root first
     if (root == nullptr) {
         newNode->parent = nullptr;
         root = newNode; 
       return;
     }
+    //traverse the tree's left branch
     if (newNode->weight < currentNode->weight) {
         if (currentNode->left == nullptr) {
+            //add new node
             newNode->parent = currentNode;
             currentNode->left = newNode;
             edges.push_back(make_pair(currentNode->data, newNode->data));
             return;
         }
+        //call recursive function again
         currentNode = currentNode->left;
         recursive_add_vertex(newNode, currentNode);
-    } else {
+    } else { //traverse the tree's right branch
         if (currentNode->right == nullptr) {
+            //add new node
             newNode->parent = currentNode;
             currentNode->right = newNode;
             edges.push_back(make_pair(currentNode->data, newNode->data));
             return;
         }
+        // call recursive function again
         currentNode = currentNode->right;
         recursive_add_vertex(newNode, currentNode);
     }
@@ -165,7 +169,7 @@ void BST<T>::recursive_add_vertex(Node<T>* newNode, Node<T>* currentNode) {
 
 template <typename T>
 bool BST<T>::contains(const string& u) {
-    for (auto& node : nodes) {
+    for (Node<T>* node : nodes) {
         if (node->data == u) return true;
     } 
     return false;
@@ -176,7 +180,7 @@ bool BST<T>::contains(const string& u) {
 template <typename T>
 vector<string> BST<T>::get_vertices() {
     vector<string> v;
-    for (auto& node : nodes) {
+    for (Node<T>* node : nodes) {
         v.push_back(node->data);
     }
     return v;
@@ -185,7 +189,7 @@ vector<string> BST<T>::get_vertices() {
 template <typename T>
 vector<string> BST<T>::get_leaves() {
     vector<string> v;
-    for (auto& node : nodes) {
+    for (Node<T>* node : nodes) {
         if(node->left == nullptr && node->right == nullptr) {
             v.push_back(node->data);
         }
@@ -197,8 +201,10 @@ vector<string> BST<T>::get_leaves() {
 
 template <typename T>
 bool BST<T>::adjacent(const string& u, const string& v) {
-    for (auto& node : nodes) {
+    //find node u
+    for (Node<T>* node : nodes) {
         if (node->data == u) {
+            //check if v id a child or parent of u
             if (node->parent) {
                 if (node->parent->data == v) return true;
             }
@@ -225,8 +231,10 @@ vector<pair<string,string>> BST<T>::get_edges() {
 template <typename T>
 vector<string> BST<T>::get_neighbours(const string& u) {
     vector<string> v;
-    for (auto node : nodes) {
+    //find node u
+    for (Node<T>* node : nodes) {
         if (node-> data == u) {
+            //add parent and children to vector
             if (node->parent) v.push_back(node->parent->data);
             if (node->left) v.push_back(node->left->data);
             if (node->right) v.push_back(node->right->data);
@@ -282,17 +290,17 @@ vector<string> BST<T>::inorder_traversal() {
 
 template <typename T>
 vector<string> BST<T>::postorder_traversal() {
-    v_postorder.clear();
-    recursive_postorder_traversal(root);
-    return v_postorder;
+    vector<string> v;
+    recursive_postorder_traversal(root, v);
+    return v;
 }
 
 template <typename T>
-void BST<T>::recursive_postorder_traversal(Node<T>* node) {
+void BST<T>::recursive_postorder_traversal(Node<T>* node, vector<string>& v) {
     if (node == NULL) return;
-    recursive_postorder_traversal(node->left);
-    recursive_postorder_traversal(node->right);
-    v_postorder.push_back(node->data);
+    recursive_postorder_traversal(node->left, v);
+    recursive_postorder_traversal(node->right, v);
+    v.push_back(node->data);
 }
 
 /* test10 */
@@ -322,14 +330,14 @@ vector<string> BST<T>::path(const string& u, const string& v){
     vector<string> vPath;
     vector<string> path;
     int breakpoint;
-
+    //find node u and node v
     for (Node<T>* node : nodes) {
         if (node->data == u) uNode = node;
     }
     for (Node<T>* node : nodes) {
         if (node->data == v) vNode = node;
     }
-
+    //find path from node u and node v to root
     Node<T>* currentNode = uNode;
     uPath.push_back(uNode->data);
     while (currentNode != root) {
@@ -342,13 +350,14 @@ vector<string> BST<T>::path(const string& u, const string& v){
         vPath.push_back(currentNode->parent->data);
         currentNode = currentNode->parent;
     }
-
+    //reverse path u and path v to make it easy to compair and find breakpoint
     reverse(uPath.begin(), uPath.end());
     reverse(vPath.begin(), vPath.end());
     for (int i = 0; i != uPath.size()-1; i++) {
         if (uPath[i] == vPath[i] ) breakpoint = i;
     }
-    int cppIsStupid = uPath.size();
+    //add the reverse of the first list up until the breakpoint then add the second after the breakpoint
+    int cppIsStupid = uPath.size(); //uPath.size()-1 produced unpredictable behavior
     for (int i = cppIsStupid-1; i > breakpoint; i--) path.push_back(uPath[i]);
     for (int i = breakpoint; i < vPath.size(); i++) path.push_back(vPath[i]);
     
@@ -362,32 +371,32 @@ vector<string> BST<T>::path_with_largest_weight(){
     vector<Node<T>*> leaves;
     vector<Node<T>*> heaviestPathNodes;
     vector<string> heaviestPath;
-
+    //create a vector of all leavs as the llargest path will always be between two leaves
     leaves.push_back(root);
     for (auto& node : nodes) {
         if(node->left == nullptr && node->right == nullptr) leaves.push_back(node);
     }
-
+    //for every combination of leaves work out the path weight and update max this is On^4
     for (Node<T>* uleaf : leaves) {
-        int weight = 0;
+        T weight = 0;
         for (Node<T>* vleaf : leaves) {
             if (uleaf != vleaf) {
-                vector<Node<T>*> v = vector_converter(path(uleaf->data, vleaf->data));
+                vector<Node<T>*> v = vector_converter(path(uleaf->data, vleaf->data)); //vector converter allows the use of the already defigned path function
                 if (path_weight(v) > path_weight(heaviestPathNodes)) {
                     heaviestPathNodes = v;
                 }
             } 
         }
     }
-    for (Node<T>* node : heaviestPathNodes) {
+    for (Node<T>* node : heaviestPathNodes) { //convert back to vector of strings
         heaviestPath.push_back(node->data);
     }
     return heaviestPath;
 }
 
 template <typename T>
-int BST<T>::path_weight(vector<Node<T>*> nodes) {
-    int weight = 0;
+size_t BST<T>::path_weight(vector<Node<T>*> nodes) {
+    T weight = 0;
     for (Node<T>* node : nodes) {
         weight += node->weight;
     }
@@ -410,14 +419,14 @@ vector<Node<T>*> BST<T>::vector_converter(vector<string> nodesData) {
 template <typename T>
 size_t BST<T>::height() {
     vector<Node<T>*> leaves;
-    int maxHeight = 0;
-
+    T maxHeight = 0;
+    //add all leaves to a vector
     for (auto& node : nodes) {
         if(node->left == nullptr && node->right == nullptr) leaves.push_back(node);
     }
-
+    //work out height of each leaf to root and update max
     for (Node<T>* leaf : leaves) {
-        int height = 0;
+        T height = 0;
         while (leaf->parent != nullptr) {
             height++;
             leaf = leaf->parent;
@@ -445,12 +454,14 @@ void BST<T>::remove_vertex(const string& u) {
 
     //case 1: nodeToRemove is a leaf
     if (nodeToRemove->left == nullptr && nodeToRemove->right == nullptr) {
+        //update parent of nodeToRemove
         if (nodeToRemove->parent->left != nullptr) {
             if (nodeToRemove = nodeToRemove->parent->left) nodeToRemove->parent->left = nullptr;
         }
         if (nodeToRemove->parent->right != nullptr) {
             if (nodeToRemove = nodeToRemove->parent->right) nodeToRemove->parent->right = nullptr;
         } 
+        //remove node
         nodes.erase(nodes.begin() + nodeToRemoveIndex);
     }
     //case 2: nodeToRemove has 1 child
@@ -458,16 +469,19 @@ void BST<T>::remove_vertex(const string& u) {
     if (nodeToRemove->left != nullptr && nodeToRemove->right == nullptr) hasOneChild = true;
     if (nodeToRemove->left == nullptr && nodeToRemove->right != nullptr) hasOneChild = true;
     if (hasOneChild == true) {
+        //find child node
         Node<T>* child;
         if (nodeToRemove->left != nullptr) child = nodeToRemove->left;
         if (nodeToRemove->right != nullptr) child = nodeToRemove->right; 
         
+        //update the parent of the nodeToRemove
         if (nodeToRemove->parent->left != nullptr) {
             if (nodeToRemove == nodeToRemove->parent->left) nodeToRemove->parent->left = child;
         }
         if (nodeToRemove->parent->right != nullptr) {
             if (nodeToRemove == nodeToRemove->parent->right) nodeToRemove->parent->right = child;
         }
+        //create edge and remove node
         edges.push_back(make_pair(nodeToRemove->parent->data, child->data));
         nodes.erase(nodes.begin() + nodeToRemoveIndex);
     }
@@ -510,7 +524,7 @@ void BST<T>::remove_edges(const string& u) {
     for (int i=0; i<edges.size(); i++) {
         if (edges[i].first == u || edges[i].second == u) {
             edges.erase(edges.begin() + i);
-            i--;
+            i--; //becuase a deletd item will shift the array indexes
         } 
     }
 }
