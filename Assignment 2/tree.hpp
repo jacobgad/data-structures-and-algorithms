@@ -373,7 +373,7 @@ vector<string> BST<T>::path_with_largest_weight(){
     vector<string> heaviestPath;
     //create a vector of all leavs as the llargest path will always be between two leaves
     leaves.push_back(root);
-    for (auto& node : nodes) {
+    for (Node<T>*& node : nodes) {
         if(node->left == nullptr && node->right == nullptr) leaves.push_back(node);
     }
     //for every combination of leaves work out the path weight and update max this is On^4
@@ -421,7 +421,7 @@ size_t BST<T>::height() {
     vector<Node<T>*> leaves;
     T maxHeight = 0;
     //add all leaves to a vector
-    for (auto& node : nodes) {
+    for (Node<T>*& node : nodes) {
         if(node->left == nullptr && node->right == nullptr) leaves.push_back(node);
     }
     //work out height of each leaf to root and update max
